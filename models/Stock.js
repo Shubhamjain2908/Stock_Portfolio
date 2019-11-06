@@ -2,8 +2,14 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const stockSchema = new Schema({
-    name: String,
-    price: String
+    name: {
+        type: String,
+        required: true
+    },
+    price: {
+        type: String,
+        required: true
+    }
 }, {
     timestamps: true
 });

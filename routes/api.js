@@ -7,6 +7,7 @@ const Trade = require('../controller/TradeController');
 /***********************
   Trade Routes
 ***********************/
+router.post('/stock', Trade.addStock);
 router.post('/trade', Trade.addTrade);
 router.put('/trade/:id', Trade.updateTrade);
 router.delete('/trade/:id', Trade.removeTrade);
