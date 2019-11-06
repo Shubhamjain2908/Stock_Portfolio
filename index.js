@@ -8,17 +8,17 @@ const cors = require('cors');
 const promiseRouter = require('express-promise-router');
 
 const keys = require('./config/keys');
-const registerApi = require('./routes/api');
 
 require('./global_functions');
 
+mongoose.Promise = global.Promise;
+mongoose.connect(keys.mongoURI, { useMongoClient: true });
 require('./models/Stock');
 require('./models/Portfolio');
 require('./models/Transaction');
 
-mongoose.Promise = global.Promise;
-mongoose.connect(keys.mongoURI, { useMongoClient: true });
 
+const registerApi = require('./routes/api');
 const router = promiseRouter();
 
 const app = express()
