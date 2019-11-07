@@ -56,10 +56,10 @@ errorResponse = function (res, data, message, code) {
 }
 
 badRequestError = function (res, message) {
-  res.statusCode = 406;
+  res.statusCode = 404;
   return res.json({
     success: false,
-    code: 406,
+    code: 404,
     message: message
   })
 }

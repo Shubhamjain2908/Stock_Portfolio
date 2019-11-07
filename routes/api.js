@@ -5,9 +5,17 @@ const router = express.Router();
 const Trade = require('../controller/TradeController');
 
 /***********************
+  Stock Routes
+***********************/
+router.get('/stock', Trade.getStocks);
+router.post('/stock', Trade.addStock);
+/***********************
+  Stock Routes
+***********************/
+
+/***********************
   Trade Routes
 ***********************/
-router.post('/stock', Trade.addStock);
 router.post('/trade', Trade.addTrade);
 router.put('/trade/:id', Trade.updateTrade);
 router.delete('/trade/:id', Trade.removeTrade);
