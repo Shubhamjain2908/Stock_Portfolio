@@ -41,7 +41,16 @@ const updateTrade = async (req, res) => {
 }
 
 const removeTrade = async (req, res) => {
-
+    req.body.transactionType = 'sell';
+    await saveTransaction(req, res);
+    let portfolioId = req.params.id;
+    let stock = await Stock.findById(stockId);
+    let portfolio = await Portfolio.findById(portfolioId).populate('Stock');
+    let returns = portfolio.quantity * portfolio.average;
+    let data, err;
+    [err, data] = await to(portfolio.save());
+    if (err) return ReE(res, err, 422);
+    return createdResponse(res, data, 'Trade successfully made');
 }
 
 const fetchPortfolio = async (req, res) => {
@@ -57,26 +66,28 @@ const getReturns = async (req, res) => {
 }
 
 const saveTransaction = async (req, res) => {
-    const { stockId, quantity, transactionType } = req.body;
-    if (!stockId) {
+    const { _stockId, quantity, transactionType } = req.body;
+    if (!_stockId) {
         return badRequestError(res, 'Request expects param `StockId`');
     }
     if (!quantity && quantity > 0) {
         return badRequestError(res, 'Request expects a positive int param `quantity`');
     }
-    let stock = await Stock.findById(stockId);
+    let stock = await Stock.findById(_stockId);
     if (!stock) {
-        return notFoundError(res, `No stock found with id: ${stockId}`);
+        return notFoundError(res, `No stock found with id: ${_stockId}`);
     }
     let transaction = {
-        _stockId: stockId,
+        _stockId,
         type: transactionType,
         rate: stock.price,
         quantity
     };
     let err, data;
-    [err, data] = await to(Transaction.save(transaction));
+    console.log('transaction => ', transaction);
+    [err, data] = await to(new Transaction(transaction).save(transaction));
     if (err) return ReE(res, err, 422);
+    console.log('transaction data => ', data);
     return data;
 };
 
