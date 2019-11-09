@@ -4,14 +4,32 @@ const { Schema } = mongoose;
 const stockSchema = new Schema({
     name: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     price: {
         type: String,
         required: true
-    }
+    },
+    portfolio: [{ type: Schema.Types.ObjectId, ref: 'Portfolio' }],
+    transaction: [{ type: Schema.Types.ObjectId, ref: 'Transaction' }]
 }, {
     timestamps: true
 });
+
+stockSchema.statics = {
+    loadAll: function () {
+        return this.find()
+            .populate('portfolios')
+            .populate('transaction')
+            .exec();
+    },
+    load: function (_id) {
+        return this.findOne({ _id })
+            .populate('portfolio')
+            .populate('transaction')
+            .exec();
+    },
+};
 
 mongoose.model('Stock', stockSchema);

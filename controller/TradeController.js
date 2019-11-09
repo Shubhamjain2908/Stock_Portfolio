@@ -14,9 +14,8 @@ const getStocks = async (req, res) => {
 
 const addStock = async (req, res) => {
     const { name, price } = req.body;
-    let stock = new Stock({ name, price });
     let data, err;
-    [err, data] = await to(stock.save());
+    [err, data] = await to(Stock.create({ name, price }));
     if (err) return ReE(res, err, 422);
     return createdResponse(res, data, 'Stock created successfully');
 }
@@ -78,8 +77,10 @@ const updateTrade = async (req, res) => {
     if (!saveCurrentTransaction) {
         return errorResponse(res, {}, 'Error in making a transaction', 422);
     }
-    const currentAverage = portfolioExists.average, currentQuantity = +portfolioExists.quantity, currentStockPrice = portfolioExists.stock.price;
-    const average = ((currentAverage * currentQuantity) + (currentStockPrice * quantity)) / currentQuantity + +quantity;
+    const currentAverage = portfolioExists.average,
+        currentQuantity = +portfolioExists.quantity,
+        currentStockPrice = portfolioExists.stock.price;
+    const average = ((currentAverage * currentQuantity) + (currentStockPrice * quantity)) / (currentQuantity + +quantity);
     let updatedData = {
         average,
         quantity: currentQuantity + +quantity
@@ -128,11 +129,15 @@ const removeTrade = async (req, res) => {
 }
 
 const fetchPortfolio = async (req, res) => {
-
+    let [err, portfolio] = await to(Stock.loadAll());
+    if (err) return ReE(res, err, 422);
+    return okResponse(res, portfolio, 'Successfully got the portfolio');
 }
 
 const getHoldings = async (req, res) => {
-
+    let [err, portfolio] = await to(Portfolio.loadAll());
+    if (err) return ReE(res, err, 422);
+    return okResponse(res, portfolio, 'Successfully got the holdings');
 }
 
 const getReturns = async (req, res) => {
@@ -140,7 +145,7 @@ const getReturns = async (req, res) => {
 }
 
 const saveTransaction = async (transaction) => {
-    let [err, data] = await to(new Transaction(transaction).save(transaction));
+    let [err, data] = await to(Transaction.create(transaction));
     return err ? null : data;
 };
 
