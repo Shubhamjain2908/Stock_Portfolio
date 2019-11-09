@@ -14,4 +14,4 @@ const stockSchema = new Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model('Stock', stockSchema);
+mongoose.model('Stock', stockSchema);

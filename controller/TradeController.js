@@ -26,15 +26,19 @@ const addTrade = async (req, res) => {
     if (!_stockId) {
         return badRequestError(res, 'Request expects param `StockId`');
     }
-    if (!quantity && quantity > 0) {
+    if (!quantity || quantity <= 0) {
         return badRequestError(res, 'Request expects a positive int param `quantity`');
     }
     let stock = await Stock.findById(_stockId);
     if (!stock) {
         return notFoundError(res, `No stock found with id: ${_stockId}`);
     }
+    let tradeExists = await Portfolio.findOne({ _stockId });
+    if (tradeExists) {
+        return badRequestError(res, 'This trade already exists');
+    }
     let transaction = {
-        _stockId,
+        stock: _stockId,
         type: 'buy',
         rate: stock.price,
         quantity
@@ -46,7 +50,7 @@ const addTrade = async (req, res) => {
     let portfolio = new Portfolio({
         average: stock.price,
         quantity,
-        _stockId
+        stock: _stockId,
     });
     let data, err;
     [err, data] = await to(portfolio.save());
@@ -59,16 +63,42 @@ const updateTrade = async (req, res) => {
 }
 
 const removeTrade = async (req, res) => {
-    req.body.transactionType = 'sell';
-    await saveTransaction(req, res);
-    let portfolioId = req.params.id;
+    const portfolioId = req.params.id;
+    const { quantity } = req.body;
+    if (!quantity || quantity <= 0) {
+        return badRequestError(res, 'Request expects a positive int param `quantity`');
+    }
+    let portfolioExists = await Portfolio.load(portfolioId);
+    if (!portfolioExists) {
+        return notFoundError(res, `No portfolio exists with id ${portfolioId}`);
+    }
+    const stockId = portfolioExists.stock._id;
     let stock = await Stock.findById(stockId);
-    let portfolio = await Portfolio.findById(portfolioId).populate('Stock');
-    let returns = portfolio.quantity * portfolio.average;
-    let data, err;
-    [err, data] = await to(portfolio.save());
-    if (err) return ReE(res, err, 422);
-    return createdResponse(res, data, 'Trade successfully made');
+    let transaction = {
+        stock: stockId,
+        type: 'sell',
+        rate: stock.price,
+        quantity
+    };
+    let saveCurrentTransaction = await saveTransaction(transaction);
+    if (!saveCurrentTransaction) {
+        return errorResponse(res, {}, 'Error in making a transaction', 422);
+    }
+
+    let returns = portfolioExists.quantity * portfolioExists.average;
+    let portfolio = {};
+    if (+quantity > +portfolioExists.quantity) {
+        return badRequestError(res, 'You don\'t have enough stocks to sell!!!');
+    } else if (+quantity === +portfolioExists.quantity) {
+        portfolio = await Portfolio.findByIdAndRemove(portfolioId);
+    } else {
+        let updatedData = {
+            quantity: portfolioExists.quantity - quantity
+        }
+        portfolio = await Portfolio.findByIdAndUpdate(portfolioId, updatedData);
+        portfolio.quantity = updatedData.quantity;
+    }
+    return okResponse(res, { portfolio, returns }, 'Trade successfully removed');
 }
 
 const fetchPortfolio = async (req, res) => {
@@ -84,10 +114,8 @@ const getReturns = async (req, res) => {
 }
 
 const saveTransaction = async (transaction) => {
-    let err, data;
-    [err, data] = await to(new Transaction(transaction).save(transaction));
-    if (err) return null;
-    return data;
+    let [err, data] = await to(new Transaction(transaction).save(transaction));
+    return err ? null : data;
 };
 
 module.exports = {
