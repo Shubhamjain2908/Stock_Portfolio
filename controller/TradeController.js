@@ -22,13 +22,31 @@ const addStock = async (req, res) => {
 }
 
 const addTrade = async (req, res) => {
-    req.body.transactionType = 'buy';
-    await saveTransaction(req, res);
-    let stock = await Stock.findById(stockId);
+    const { _stockId, quantity } = req.body;
+    if (!_stockId) {
+        return badRequestError(res, 'Request expects param `StockId`');
+    }
+    if (!quantity && quantity > 0) {
+        return badRequestError(res, 'Request expects a positive int param `quantity`');
+    }
+    let stock = await Stock.findById(_stockId);
+    if (!stock) {
+        return notFoundError(res, `No stock found with id: ${_stockId}`);
+    }
+    let transaction = {
+        _stockId,
+        type: 'buy',
+        rate: stock.price,
+        quantity
+    };
+    let saveCurrentTransaction = await saveTransaction(transaction);
+    if (!saveCurrentTransaction) {
+        return errorResponse(res, {}, 'Error in making a transaction', 422);
+    }
     let portfolio = new Portfolio({
         average: stock.price,
         quantity,
-        _stockId: stockId
+        _stockId
     });
     let data, err;
     [err, data] = await to(portfolio.save());
@@ -65,29 +83,10 @@ const getReturns = async (req, res) => {
 
 }
 
-const saveTransaction = async (req, res) => {
-    const { _stockId, quantity, transactionType } = req.body;
-    if (!_stockId) {
-        return badRequestError(res, 'Request expects param `StockId`');
-    }
-    if (!quantity && quantity > 0) {
-        return badRequestError(res, 'Request expects a positive int param `quantity`');
-    }
-    let stock = await Stock.findById(_stockId);
-    if (!stock) {
-        return notFoundError(res, `No stock found with id: ${_stockId}`);
-    }
-    let transaction = {
-        _stockId,
-        type: transactionType,
-        rate: stock.price,
-        quantity
-    };
+const saveTransaction = async (transaction) => {
     let err, data;
-    console.log('transaction => ', transaction);
     [err, data] = await to(new Transaction(transaction).save(transaction));
-    if (err) return ReE(res, err, 422);
-    console.log('transaction data => ', data);
+    if (err) return null;
     return data;
 };
 
