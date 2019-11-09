@@ -59,7 +59,35 @@ const addTrade = async (req, res) => {
 }
 
 const updateTrade = async (req, res) => {
-
+    const portfolioId = req.params.id;
+    const { quantity } = req.body;
+    if (!quantity || quantity <= 0) {
+        return badRequestError(res, 'Request expects a positive int param `quantity`');
+    }
+    let portfolioExists = await Portfolio.load(portfolioId);
+    if (!portfolioExists) {
+        return notFoundError(res, `No portfolio exists with id ${portfolioId}`);
+    }
+    let transaction = {
+        stock: portfolioExists.stock._id,
+        type: 'buy',
+        rate: portfolioExists.stock.price,
+        quantity
+    };
+    let saveCurrentTransaction = await saveTransaction(transaction);
+    if (!saveCurrentTransaction) {
+        return errorResponse(res, {}, 'Error in making a transaction', 422);
+    }
+    const currentAverage = portfolioExists.average, currentQuantity = +portfolioExists.quantity, currentStockPrice = portfolioExists.stock.price;
+    const average = ((currentAverage * currentQuantity) + (currentStockPrice * quantity)) / currentQuantity + +quantity;
+    let updatedData = {
+        average,
+        quantity: currentQuantity + +quantity
+    }
+    let [err, _] = await to(Portfolio.findByIdAndUpdate(portfolioId, updatedData));
+    if (err) return ReE(res, err, 422);
+    Object.assign(portfolioExists, updatedData);
+    return okResponse(res, portfolioExists, 'Portfolio updated successfully');
 }
 
 const removeTrade = async (req, res) => {
@@ -72,12 +100,10 @@ const removeTrade = async (req, res) => {
     if (!portfolioExists) {
         return notFoundError(res, `No portfolio exists with id ${portfolioId}`);
     }
-    const stockId = portfolioExists.stock._id;
-    let stock = await Stock.findById(stockId);
     let transaction = {
-        stock: stockId,
+        stock: portfolioExists.stock._id,
         type: 'sell',
-        rate: stock.price,
+        rate: portfolioExists.stock.price,
         quantity
     };
     let saveCurrentTransaction = await saveTransaction(transaction);
@@ -96,7 +122,7 @@ const removeTrade = async (req, res) => {
             quantity: portfolioExists.quantity - quantity
         }
         portfolio = await Portfolio.findByIdAndUpdate(portfolioId, updatedData);
-        portfolio.quantity = updatedData.quantity;
+        Object.assign(Portfolio, updatedData);
     }
     return okResponse(res, { portfolio, returns }, 'Trade successfully removed');
 }
