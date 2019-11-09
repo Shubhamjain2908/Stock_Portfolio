@@ -20,7 +20,7 @@ const stockSchema = new Schema({
 stockSchema.statics = {
     loadAll: function () {
         return this.find()
-            .populate('portfolios')
+            .populate('portfolio')
             .populate('transaction')
             .exec();
     },
