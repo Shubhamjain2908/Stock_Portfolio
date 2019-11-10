@@ -2,13 +2,20 @@
 
 const express = require('express');
 const router = express.Router();
-const Trade = require('../controller/TradeController');
+const { getStocks,
+  addStock,
+  addTrade,
+  updateTrade,
+  removeTrade,
+  fetchPortfolio,
+  getHoldings,
+  getReturns } = require('../controller/TradeController');
 
 /***********************
   Stock Routes
 ***********************/
-router.get('/stock', Trade.getStocks);
-router.post('/stock', Trade.addStock);
+router.get('/stock', getStocks);
+router.post('/stock', addStock);
 /***********************
   Stock Routes
 ***********************/
@@ -16,12 +23,12 @@ router.post('/stock', Trade.addStock);
 /***********************
   Trade Routes
 ***********************/
-router.post('/trade', Trade.addTrade);
-router.put('/trade/:id', Trade.updateTrade);
-router.delete('/trade/:id', Trade.removeTrade);
-router.get('/portfolio', Trade.fetchPortfolio);
-router.get('/holdings', Trade.getHoldings);
-router.get('/returns', Trade.getReturns);
+router.post('/trade', addTrade);
+router.put('/trade/:id', updateTrade);
+router.delete('/trade/:id', removeTrade);
+router.get('/portfolio', fetchPortfolio);
+router.get('/holdings', getHoldings);
+router.get('/returns', getReturns);
 /***********************
   Trade Routes
 ***********************/

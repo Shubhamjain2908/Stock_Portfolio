@@ -5,6 +5,13 @@ const Stock = mongoose.model('Stock');
 const Portfolio = mongoose.model('Portfolio');
 const Transaction = mongoose.model('Transaction');
 
+/**
+ * Fetch Stocks
+ * @param {Request} req 
+ * @param {Response} res 
+ * @api public
+ * @returns {successResponse}
+ */
 const getStocks = async (req, res) => {
     let err, stocks;
     [err, stocks] = await to(Stock.find());
@@ -12,6 +19,13 @@ const getStocks = async (req, res) => {
     return successResponse(res, 200, stocks, 'Stocks fetched successfully.');
 }
 
+/**
+ * Add Stocks
+ * @param {Request} req 
+ * @param {Response} res 
+ * @api public
+ * @returns {createdResponse}
+ */
 const addStock = async (req, res) => {
     const { name, price } = req.body;
     let data, err;
@@ -20,6 +34,14 @@ const addStock = async (req, res) => {
     return createdResponse(res, data, 'Stock created successfully');
 }
 
+/**
+ * Adding trades for a security, and updating the portfolio accordingly.
+ * @param {Request} req 
+ * @param {Response} res 
+ * @throws {badRequestError, notFoundError, errorResponse}
+ * @api public
+ * @returns {createdResponse}
+ */
 const addTrade = async (req, res) => {
     const { _stockId, quantity } = req.body;
     if (!_stockId) {
@@ -57,6 +79,14 @@ const addTrade = async (req, res) => {
     return createdResponse(res, data, 'Trade successfully made');
 }
 
+/**
+ * Updating a trade, and updating (buying more stocks) the portfolio accordingly.
+ * @param {Request} req 
+ * @param {Response} res 
+ * @throws {badRequestError, notFoundError, errorResponse}
+ * @api public
+ * @returns {okResponse}
+ */
 const updateTrade = async (req, res) => {
     const portfolioId = req.params.id;
     const { quantity } = req.body;
@@ -91,6 +121,14 @@ const updateTrade = async (req, res) => {
     return okResponse(res, portfolioExists, 'Portfolio updated successfully');
 }
 
+/**
+ * Removing a trade from a portfolio (selling stocks from portfolio)
+ * @param {Request} req 
+ * @param {Response} res 
+ * @throws {badRequestError, notFoundError, errorResponse}
+ * @api public
+ * @returns {okResponse}
+ */
 const removeTrade = async (req, res) => {
     const portfolioId = req.params.id;
     const { quantity } = req.body;
@@ -128,6 +166,14 @@ const removeTrade = async (req, res) => {
     return okResponse(res, { portfolio, returns }, 'Trade successfully removed');
 }
 
+/**
+ * Fetching portfolio: all the securities and trades corresponding to it.
+ * @param {Request} req 
+ * @param {Response} res 
+ * @throws {errorResponse}
+ * @api public
+ * @returns {okResponse}
+ */
 const fetchPortfolio = async (req, res) => {
     let [err, stocks] = await to(Stock.loadAll());
     if (err) return ReE(res, err, 422);
@@ -148,6 +194,14 @@ const fetchPortfolio = async (req, res) => {
     return okResponse(res, { portfolio: transactions }, 'Successfully got the portfolio');
 }
 
+/**
+ * An aggregate view of all securities in the portfolio with its final quantity and average buy price.
+ * @param {Request} req 
+ * @param {Response} res 
+ * @throws {errorResponse}
+ * @api public
+ * @returns {okResponse}
+ */
 const getHoldings = async (req, res) => {
     let [err, portfolio] = await to(Portfolio.loadAll());
     if (err) return ReE(res, err, 422);
@@ -158,6 +212,14 @@ const getHoldings = async (req, res) => {
     return okResponse(res, data, 'Successfully got the holdings');
 }
 
+/**
+ * This API call should respond with cumulative returns at any point of time of a particular portfolio.
+ * @param {Request} req 
+ * @param {Response} res 
+ * @throws {errorResponse}
+ * @api public
+ * @returns {okResponse}
+ */
 const getReturns = async (req, res) => {
     let [err, portfolio] = await to(Portfolio.find());
     if (err) return ReE(res, err, 422);
@@ -165,6 +227,13 @@ const getReturns = async (req, res) => {
     return okResponse(res, { returns: sum }, 'Successfully return the Total profit');
 }
 
+/**
+ * Calculated the returns from portfolio: 
+ * Formule: SUM((CURRENT_PRICE[ticker] - AVERAGE_BUY_PRICE[ticker]) * CURRENT_QUANTITY[ticker]) // CURRENT_PRICE[ticker] is assumed to be 1000 for all
+ * @param {Portfolio Mode} portfolio 
+ * @api private
+ * @returns {Number}
+ */
 const getProfit = portfolio => {
     let sum = 0;
     portfolio.map(v => {
@@ -173,6 +242,12 @@ const getProfit = portfolio => {
     return sum;
 }
 
+/**
+ * Method to save every transaction/trade which was made
+ * @param {Transaction} transaction 
+ * @api private
+ * @returns { null || Object}
+ */
 const saveTransaction = async (transaction) => {
     let [err, data] = await to(Transaction.create(transaction));
     return err ? null : data;

@@ -12,7 +12,6 @@ const keys = require('./config/keys');
 require('./global_functions');
 
 mongoose.Promise = global.Promise;
-console.log('Mongo Url => ', keys.mongoURI, typeof keys.mongoURI);
 mongoose.connect(keys.mongoURI);
 require('./models/Stock');
 require('./models/Portfolio');

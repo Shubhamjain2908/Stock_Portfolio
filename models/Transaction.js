@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+/**
+ * Transaction Schema
+ */
 const transactionSchema = new Schema({
     stock: { type: Schema.Types.ObjectId, ref: 'Stock' },
     type: String,
@@ -10,12 +13,15 @@ const transactionSchema = new Schema({
     timestamps: true
 });
 
+/**
+ * Statics
+ */
 transactionSchema.statics = {
-    load: function (_id) {
-        return this.findOne({ _id })
-            .populate('stock', '_id name price')
-            .exec();
-    },
+    /**
+    * LoadAll: includes eager loading of stock
+    *
+    * @api private
+    */
     loadAll: function () {
         return this.find()
             .populate('stock', '_id name price')
