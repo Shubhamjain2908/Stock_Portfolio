@@ -137,18 +137,26 @@ const fetchPortfolio = async (req, res) => {
 const getHoldings = async (req, res) => {
     let [err, portfolio] = await to(Portfolio.loadAll());
     if (err) return ReE(res, err, 422);
-    return okResponse(res, portfolio, 'Successfully got the holdings');
+    let data = {
+        portfolio: portfolio,
+        returns: getProfit(portfolio)
+    }
+    return okResponse(res, data, 'Successfully got the holdings');
 }
 
 const getReturns = async (req, res) => {
+    let [err, portfolio] = await to(Portfolio.find());
+    if (err) return ReE(res, err, 422);
+    let sum = getProfit(portfolio);
+    return okResponse(res, { returns: sum }, 'Successfully return the Total profit');
+}
+
+const getProfit = portfolio => {
     let sum = 0;
-    Portfolio.find().then(result => {
-        // SUM((CURRENT_PRICE[ticker] - AVERAGE_BUY_PRICE[ticker]) * CURRENT_QUANTITY[ticker])
-        result.map(v => {
-            sum += ((1000 - v.average) * v.quantity)
-        });
-        return okResponse(res, { returns: sum }, 'Successfully return the Total profit');
+    portfolio.map(v => {
+        sum += ((1000 - v.average) * v.quantity)
     });
+    return sum;
 }
 
 const saveTransaction = async (transaction) => {
