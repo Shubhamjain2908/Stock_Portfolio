@@ -8,8 +8,8 @@
     "npm": "6.4.1"
   },
   "scripts": {
-    "start": "nodemon index.js",
-    "server": "nodemon index.js --ignore tests",
+    "start": "node index.js",
+    "server": "node index.js --ignore tests",
     "heroku-postbuild": "npm run build"
   },
   "author": "Shubham Jain",

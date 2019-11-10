@@ -63,8 +63,9 @@ app.use(function (req, res, next) {
 
 });
 
-const server = app.listen(5000, () => {
-  console.log('Portfolio app listening at port %s', server.address().port);
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Portfolio app listening at port ${PORT}`);
 });
 
 module.exports = app;
