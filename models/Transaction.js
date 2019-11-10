@@ -16,6 +16,11 @@ transactionSchema.statics = {
             .populate('stock', '_id name price')
             .exec();
     },
+    loadAll: function () {
+        return this.find()
+            .populate('stock', '_id name price')
+            .exec();
+    },
 };
 
 mongoose.model('Transaction', transactionSchema);

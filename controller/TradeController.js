@@ -129,9 +129,23 @@ const removeTrade = async (req, res) => {
 }
 
 const fetchPortfolio = async (req, res) => {
-    let [err, portfolio] = await to(Stock.loadAll());
+    let [err, stocks] = await to(Stock.loadAll());
     if (err) return ReE(res, err, 422);
-    return okResponse(res, portfolio, 'Successfully got the portfolio');
+    stocks = JSON.parse(JSON.stringify(stocks));
+    const portfolioPromise = await stocks.map(async v => {
+        let p = await Portfolio.findOne({ stock: v._id });
+        v.portfolio.push(p);
+        return v;
+    });
+    let portfolios = await Promise.all(portfolioPromise);
+    portfolios = JSON.parse(JSON.stringify(portfolios));
+    const transactionPromise = await portfolios.map(async v => {
+        let t = await Transaction.find({ stock: v._id });
+        v.transaction.push(t);
+        return v;
+    });
+    const transactions = await Promise.all(transactionPromise);
+    return okResponse(res, { portfolio: transactions }, 'Successfully got the portfolio');
 }
 
 const getHoldings = async (req, res) => {
